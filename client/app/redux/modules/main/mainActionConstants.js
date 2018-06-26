@@ -1,0 +1,1 @@
+export const UPLOAD_TO_LIST = 'UPLOAD_TO_LIST';
