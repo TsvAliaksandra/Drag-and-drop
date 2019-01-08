@@ -1,28 +1,32 @@
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+
 const path = require('path');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const WebpackIsomorphicToolsPlugin = require('webpack-isomorphic-tools/plugin');
 const webpackIsomorphicToolsPlugin = new WebpackIsomorphicToolsPlugin(require('./webpack-isomorphic-tools-configuration')).development();
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const env = process.env.NODE_ENV ? process.env.NODE_ENV.trim() : 'development';
-const app = path.resolve('app/');
+const src = path.resolve('src/');
 const build = path.resolve('../build', env);
+const devMode = process.env.NODE_ENV !== 'production';
 
 module.exports = {
-  entry: app,
+  mode: 'development',
+  entry: src,
   output: {
     path: build,
     filename: '[name].js',
   },
   resolve: {
     modules: [
-      app,
+      src,
       'node_modules',
     ],
   },
 
   devServer: {
+    contentBase: path.join(__dirname, 'dist'),
     port: 3000,
     historyApiFallback: true,
   },
@@ -36,46 +40,30 @@ module.exports = {
         options: {
           babelrc: false,
           presets: [
-            "es2015",
-            "react",
-            "stage-2"
+            'es2015',
+            'react',
+            'stage-2'
           ]
         }
       },
       {
-        test: /\.jsx?$/,
-        exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'eslint-loader',
-          options: {
-            emitError: true,
-          }
-
-        }
-
-      },
-      {
         test: /\.less$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            { loader: 'css-loader', options: { minimize: true } },
-            'postcss-loader',
-            'less-loader'
-          ],
-        }),
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+          },
+          'css-loader',
+          'less-loader',
+        ]
       },
       {
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            {
-              loader: 'css-loader',
-              options: { minimize: true }
-            },
-          ],
-        }),
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+          },
+          'css-loader'
+        ]
       },
       {
         test: webpackIsomorphicToolsPlugin.regularExpression('images'),
@@ -86,22 +74,35 @@ module.exports = {
 
   plugins: [
     new HtmlWebpackPlugin({
-      template: path.resolve(app, 'index.html'),
+      template: path.resolve(src, 'index.html'),
     }),
-
-    new ExtractTextPlugin({
-      filename: '[name].css',
-      allChunks: true
-    }),
-
-    new webpack.optimize.CommonsChunkPlugin({
-      name: 'vendor',
-      filename: 'vendor.js',
-      minChunks(module) {
-        return module.context &&
-          module.context.indexOf('node_modules') >= 0;
-      }
+    new MiniCssExtractPlugin({
+      filename: devMode ? '[name].css' : '[name].[hash].css',
+      chunkFilename: devMode ? '[id].css' : '[id].[hash].css',
     }),
     webpackIsomorphicToolsPlugin
-  ]
+  ],
+  optimization: {
+    splitChunks: {
+      chunks: 'async',
+      minSize: 30000,
+      maxSize: 0,
+      minChunks: 1,
+      maxAsyncRequests: 5,
+      maxInitialRequests: 3,
+      automaticNameDelimiter: '~',
+      name: true,
+      cacheGroups: {
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10
+        },
+        default: {
+          minChunks: 2,
+          priority: -20,
+          reuseExistingChunk: true
+        }
+      }
+    }
+  }
 };

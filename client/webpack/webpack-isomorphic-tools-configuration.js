@@ -9,4 +9,4 @@ module.exports =
       extensions: ['png', 'jpg', 'gif', 'ico', 'svg']
     }
   }
-}
+};

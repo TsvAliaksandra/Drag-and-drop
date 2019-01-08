@@ -6,7 +6,7 @@ class MainPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: '',
+      value: ''
     };
   }
 
@@ -14,8 +14,15 @@ class MainPage extends React.Component {
     this.setState({value: e.target.value});
   }
 
-  uploadToList() {
-    this.props.uploadToList(this.state.value);
+  uploadToList(e) {
+    const {value} = this.state;
+    e.preventDefault();
+
+    if (value === '') {
+      return;
+    }
+    this.props.uploadToList(value);
+    this.setState({value: ''});
   }
 
   renderListItems() {
@@ -29,16 +36,19 @@ class MainPage extends React.Component {
   renderListBlock() {
     return (
       <div className="list-block">
-        <div>
-          <input onChange={(e) => this.setValue(e)} value={this.state.value} />
-        </div>
+        <form onSubmit={(e) => this.uploadToList(e)}>
+          <div>
+            <input onChange={e => this.setValue(e)} value={this.state.value} />
+          </div>
+        </form>
+
         <div className="list-items-block">
           {this.props.listValue.length ? this.renderListItems() : ''}
         </div>
         <div>
           <input
             type="button"
-            onClick={() => this.uploadToList()}
+            onClick={e => this.uploadToList(e)}
             value="submit"
           />
         </div>
@@ -47,17 +57,13 @@ class MainPage extends React.Component {
   }
 
   render() {
-    return (
-      <div>
-        {this.renderListBlock()}
-      </div>
-    );
+    return <div>{this.renderListBlock()}</div>;
   }
 }
 
 MainPage.propsTypes = {
   listValue: PropTypes.array.isRequired,
-  uploadToList: PropTypes.func,
+  uploadToList: PropTypes.func
 };
 
 export default MainPage;
